@@ -4,109 +4,161 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#E7DFCC">
 <title>核时 · 时间流水账</title>
 <style>
   :root{
-    --paper:#F6F5F1; --card:#FFFFFF; --ink:#1B1E22; --ink-soft:#5B616A;
-    --ink-faint:#A2A7AE; --rule:#E5E3DC; --live:#1E8A6E; --live-soft:#E3F1EC;
-    --danger:#B04A3A; --mono:ui-monospace,'SF Mono',Menlo,'Roboto Mono',monospace;
+    /* ── 张恩利 · 暖白旧墙 ── */
+    --paper:#F5F1E8;          /* 页面暖白 */
+    --card:#FCFAF4;           /* hero/卡片近月白 */
+    --wash-a:#FFFFFF;         /* 呼吸色斑·亮 */
+    --wash-b:#EFEBE0;         /* 呼吸色斑·沉 */
+    --ink:#211C15;
+    --ink-soft:#5C574B;
+    --ink-faint:#A79C86;
+    --rule:#E4DFD2;
+    --live:#B23A42;           /* 绯红：正在跑那一记 */
+    --danger:#B23A42;
+    /* 类别线色：他肖像里那几种沉着色 */
+    --c0:#5C7A96;  /* 灰蓝 */
+    --c1:#B0553D;  /* 赭红 */
+    --c2:#C09A4C;  /* 赭黄 */
+    --c3:#6E8A6A;  /* 暗绿 */
+    --c4:#6E5B84;  /* 灰紫 */
+    --c5:#3A352B;  /* 墨 */
+    --mono:ui-monospace,'SF Mono',Menlo,'Roboto Mono',monospace;
+    --serif:'Songti SC','STSong','Noto Serif SC',Georgia,'Times New Roman',serif;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0}
   body{
     background:var(--paper);color:var(--ink);font-family:var(--sans);
-    line-height:1.5;padding:env(safe-area-inset-top) 0 40px;
-    -webkit-font-smoothing:antialiased;
+    line-height:1.5;padding:env(safe-area-inset-top) 0 44px;
+    -webkit-font-smoothing:antialiased;position:relative;
   }
-  .wrap{max-width:560px;margin:0 auto;padding:0 18px}
-  header{padding:20px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
-  header h1{font-size:15px;font-weight:600;letter-spacing:.14em;margin:0}
+  /* 纸纹理：极淡的颗粒，压在整页上 */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    opacity:.35;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 18px;position:relative;z-index:1}
+  header{padding:22px 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+  header h1{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:.22em;margin:0}
   header .date{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
 
-  /* ── HERO: the one clock, running or idle ── */
+  /* ── HERO：旧墙暖白 ── */
   .now{
-    background:var(--card);border:1px solid var(--rule);border-radius:14px;
-    padding:20px 18px 18px;margin-top:6px;position:relative;overflow:hidden;
+    border:1px solid var(--rule);border-radius:8px;
+    padding:24px 22px 22px;margin-top:6px;position:relative;overflow:hidden;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 80% at 22% 14%, #FBEEE8 0%, transparent 55%),
+      radial-gradient(120% 90% at 82% 90%, #E7F0EA 0%, transparent 55%),
+      radial-gradient(100% 70% at 60% 55%, #FCF6EC 0%, transparent 60%),
+      var(--card);
+    box-shadow:0 1px 0 rgba(33,28,21,.03),0 14px 34px -24px rgba(33,28,21,.4);
   }
-  .now.live{border-color:var(--live)}
+  /* 旧墙颗粒 */
+  .now::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.5;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  }
+  .now>*{position:relative;z-index:1}
   .now .status{
-    font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+    font-family:var(--sans);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);
     display:flex;align-items:center;gap:8px;
   }
   .now.live .status{color:var(--live)}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);flex:none}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);flex:none}
   .now.live .dot{background:var(--live);animation:pulse 1.6s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
   @media (prefers-reduced-motion:reduce){.now.live .dot{animation:none}}
 
-  .now .task{font-size:19px;font-weight:600;margin:10px 0 2px;min-height:26px;word-break:break-word}
-  .now .task.empty{color:var(--ink-faint);font-weight:400}
-  .clock{font-family:var(--mono);font-size:44px;font-weight:600;letter-spacing:.01em;
-    line-height:1;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+  .now .task{font-family:var(--serif);font-size:22px;font-weight:600;margin:9px 0 2px;min-height:30px;word-break:break-word;letter-spacing:.01em;color:var(--ink)}
+  .now .task.empty{color:var(--ink-faint);font-weight:400;font-size:19px}
+  .clock{font-family:var(--serif);font-size:56px;font-weight:600;letter-spacing:.02em;
+    line-height:1.02;margin:6px 0 2px;font-variant-numeric:tabular-nums;color:var(--ink)}
   .now.live .clock{color:var(--live)}
   .now:not(.live) .clock{color:var(--ink-faint)}
   .sincelbl{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
 
-  .starter{display:flex;gap:8px;margin-top:14px}
+  /* ── 今日之像 ── */
+  .portrait-wrap{margin:14px 0 2px}
+  .portrait{display:block;width:100%;height:auto;overflow:visible}
+  .band-cap{font-family:var(--serif);font-size:12.5px;color:var(--ink-soft);margin-top:6px;letter-spacing:.02em}
+  .band-cap b{font-weight:600;color:var(--ink)}
+
+  .starter{display:flex;gap:8px;margin-top:16px}
   .starter input{
-    flex:1;min-width:0;font-family:var(--sans);font-size:16px;padding:11px 12px;
-    border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink);
+    flex:1;min-width:0;font-family:var(--sans);font-size:16px;padding:12px 13px;
+    border:1px solid var(--rule);border-radius:5px;background:#FFFDF8;color:var(--ink);
   }
+  .starter input::placeholder{color:var(--ink-faint)}
   .starter input:focus{outline:2px solid var(--ink);outline-offset:1px;background:#fff}
 
   button{font-family:var(--sans);cursor:pointer;border:none;font-size:15px}
   .btn-primary{
-    padding:11px 20px;border-radius:10px;background:var(--ink);color:#fff;font-weight:600;flex:none;
+    padding:11px 20px;border-radius:5px;background:var(--ink);color:var(--card);font-weight:600;flex:none;
+    letter-spacing:.04em;
   }
   .btn-primary:active{transform:translateY(1px)}
-  .btn-stop{background:var(--live)}
+  .btn-stop{background:var(--live);color:#fff}
   .btn-block{width:100%;margin-top:12px;padding:13px}
 
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-  .chip{padding:6px 11px;border-radius:20px;border:1px solid var(--rule);background:#fff;
-    font-size:13px;color:var(--ink-soft)}
-  .chip:active{background:var(--paper)}
-  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip{flex:1 1 auto;justify-content:center;white-space:nowrap;
+    padding:7px 6px;border-radius:3px;border:1px solid var(--rule);background:transparent;
+    font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:5px}
+  .chip .sw{width:8px;height:8px;border-radius:2px;flex:none}
+  .chip:active{background:#00000008}
+  .chip.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
 
   /* ── section headings ── */
-  .sec{margin-top:26px}
-  .sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px}
-  .sec-h h2{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--ink-soft);margin:0}
+  .sec{margin-top:28px}
+  .sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 11px}
+  .sec-h h2{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:.14em;
+    color:var(--ink);margin:0}
   .sec-h .tot{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
-  .link{background:none;color:var(--ink-soft);font-size:12px;padding:4px;text-decoration:underline;text-underline-offset:2px}
+  .link{background:none;color:var(--ink-soft);font-size:12.5px;padding:4px;text-decoration:underline;text-underline-offset:3px;letter-spacing:.02em}
 
   /* ── ledger rows ── */
-  .ledger{background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+  .ledger{background:var(--card);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
   .row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--rule)}
   .row:first-child{border-top:none}
-  .row .span{font-family:var(--mono);font-size:12px;color:var(--ink-faint);flex:none;width:92px;line-height:1.35}
+  .row .span{font-family:var(--mono);font-size:12px;color:var(--ink-faint);flex:none;width:88px;line-height:1.35}
+  .row .tag{width:3px;align-self:stretch;border-radius:2px;flex:none;margin:1px 0}
   .row .mid{flex:1;min-width:0}
-  .row .nm{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .nm{font-family:var(--serif);font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .cat{font-size:11.5px;color:var(--ink-soft)}
   .row .cat:empty{display:none}
   .row .dur{font-family:var(--mono);font-size:14px;font-weight:600;flex:none;font-variant-numeric:tabular-nums}
-  .row .x{flex:none;color:var(--ink-faint);background:none;font-size:18px;padding:2px 4px;line-height:1}
+  .row .x{flex:none;color:var(--ink-faint);background:none;font-size:16px;padding:2px 4px;line-height:1}
   .row:active{background:var(--paper)}
-  .empty-note{padding:22px 14px;text-align:center;color:var(--ink-faint);font-size:14px}
+  .empty-note{padding:24px 14px;text-align:center;color:var(--ink-faint);font-size:14px;font-family:var(--serif)}
 
   /* ── totals bars ── */
-  .bars{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:6px 14px}
-  .bar{padding:9px 0;border-top:1px solid var(--rule)}
-  .bar:first-child{border-top:none}
-  .bar .barh{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px}
-  .bar .barh .d{font-family:var(--mono);color:var(--ink-soft)}
-  .track{height:6px;background:var(--paper);border-radius:3px;overflow:hidden}
-  .fill{height:100%;background:var(--ink);border-radius:3px}
+  .bars{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:16px 15px}
+  .dist-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--paper);border:1px solid var(--rule)}
+  .dist-seg{height:100%;min-width:3px;
+    background-image:repeating-linear-gradient(45deg,
+      rgba(255,255,255,.18) 0 2px, transparent 2px 5px);}
+  .dist-seg+.dist-seg{box-shadow:inset 1.5px 0 0 var(--card)}
+  .dist-legend{margin-top:14px;display:flex;flex-direction:column;gap:9px}
+  .dist-item{display:flex;align-items:center;gap:9px;font-size:14px}
+  .dist-item .sw{width:10px;height:10px;border-radius:3px;flex:none}
+  .dist-item .nm{font-family:var(--serif);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dist-item .pct{font-family:var(--mono);font-size:13px;font-weight:600;flex:none}
+  .dist-item .d{font-family:var(--mono);font-size:12px;color:var(--ink-faint);flex:none;width:56px;text-align:right}
 
   /* ── history by day ── */
   .dayhead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--rule)}
   .dayhead:first-child{border-top:none}
   .dayhead .cv{flex:none;width:16px;color:var(--ink-faint);font-family:var(--mono);font-size:13px;transition:transform .15s}
   .dayhead.open .cv{transform:rotate(90deg)}
-  .dayhead .dd{flex:1;font-size:14.5px;font-weight:600}
+  .dayhead .dd{flex:1;font-family:var(--serif);font-size:15px;font-weight:600}
   .dayhead .dsub{font-family:var(--mono);font-size:12px;color:var(--ink-faint);font-weight:400;margin-left:8px}
   .dayhead .dtot{font-family:var(--mono);font-size:13px;color:var(--ink-soft);flex:none}
   .dayhead:active{background:var(--paper)}
@@ -114,24 +166,66 @@
   .daybody.open{display:block}
   .daybody .row{padding-left:30px;background:var(--paper)}
 
-  /* ── manual form ── */
-  dialog{border:none;border-radius:16px;padding:0;max-width:420px;width:calc(100% - 32px);
-    box-shadow:0 20px 60px rgba(0,0,0,.28);background:var(--card)}
-  dialog::backdrop{background:rgba(20,22,25,.4)}
-  .dg{padding:20px}
-  .dg h3{margin:0 0 16px;font-size:15px;letter-spacing:.04em}
+  /* ── 工具行 ── */
+  .tools{margin-top:26px;display:flex;flex-wrap:wrap;gap:14px 18px;justify-content:center;
+    padding:16px 0 2px;border-top:1px solid var(--rule)}
+  .tools button{background:none;color:var(--ink-soft);font-size:13px;letter-spacing:.04em;
+    text-decoration:underline;text-underline-offset:3px}
+  .tools button:active{color:var(--ink)}
+
+  /* ── dialogs ── */
+  dialog{border:none;border-radius:8px;padding:0;max-width:420px;width:calc(100% - 32px);
+    box-shadow:0 24px 70px rgba(20,17,12,.34);background:var(--card)}
+  dialog::backdrop{background:rgba(33,28,21,.42)}
+  .dg{padding:22px}
+  .dg h3{font-family:var(--serif);margin:0 0 18px;font-size:17px;letter-spacing:.06em}
   .fld{margin-bottom:12px}
-  .fld label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  .fld label{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
     color:var(--ink-soft);margin-bottom:5px}
   .fld input{width:100%;font-family:var(--sans);font-size:16px;padding:10px 11px;
-    border:1px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink)}
+    border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink)}
   .fld input:focus{outline:2px solid var(--ink);outline-offset:1px;background:#fff}
   .fld-2{display:flex;gap:10px}.fld-2 .fld{flex:1}
-  .dg-act{display:flex;gap:10px;margin-top:8px}
-  .dg-act button{flex:1;padding:12px;border-radius:10px}
+  .dg-act{display:flex;gap:10px;margin-top:10px}
+  .dg-act button{flex:1;padding:12px;border-radius:5px}
   .btn-ghost{background:var(--paper);color:var(--ink-soft)}
   .btn-del{background:none;color:var(--danger);font-size:13px;padding:8px;text-align:center;width:100%;margin-top:4px}
-  .foot{text-align:center;color:var(--ink-faint);font-size:11px;margin-top:26px;line-height:1.7}
+  .dg-note{font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin:2px 0 16px}
+
+  /* 类别管理 */
+  .catrow{display:flex;align-items:center;gap:9px;padding:11px 2px;border-top:1px solid var(--rule)}
+  .catrow:first-child{border-top:none}
+  .catrow .ord{display:flex;flex-direction:column;gap:0;flex:none;width:18px}
+  .catrow .mv{background:none;border:none;color:var(--ink-soft);font-size:10px;line-height:1.05;padding:1px;cursor:pointer}
+  .catrow .mv[disabled]{color:var(--rule);cursor:default}
+  .catrow .sw{width:16px;height:16px;border-radius:4px;flex:none;border:none;cursor:pointer;padding:0;
+    box-shadow:0 0 0 1px rgba(33,28,21,.12) inset}
+  .catrow .cn{flex:1;font-family:var(--serif);font-size:16px;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .catrow .cc{font-family:var(--mono);font-size:12px;color:var(--ink-faint);flex:none}
+  .catrow .ce{flex:none;background:none;color:var(--ink-soft);font-size:13px;
+    text-decoration:underline;text-underline-offset:2px;padding:4px}
+  .cat-empty{padding:20px 2px;color:var(--ink-faint);font-size:14px;text-align:center;font-family:var(--serif)}
+  .btn-addcat{width:100%;margin-top:14px;padding:11px;border-radius:5px;border:1px dashed var(--rule);
+    background:none;color:var(--ink-soft);font-size:14px;letter-spacing:.04em}
+  .btn-addcat:active{background:var(--paper)}
+  /* 颜色网格 */
+  .colorgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .colorgrid .sw{aspect-ratio:1;border-radius:5px;border:none;cursor:pointer;position:relative;padding:0;
+    box-shadow:0 0 0 1px rgba(33,28,21,.12) inset}
+  .colorgrid .sw.sel{box-shadow:0 0 0 2px var(--ink)}
+  .colorgrid .sw.used::after{content:"";position:absolute;right:2px;bottom:2px;width:5px;height:5px;
+    border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 0 0 1px rgba(33,28,21,.3)}
+
+  .fld select.fsel{width:100%;font-family:var(--sans);font-size:16px;padding:10px 34px 10px 11px;
+    border:1px solid var(--rule);border-radius:5px;background-color:var(--paper);color:var(--ink);
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235C574B' stroke-width='1.6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center}
+  .fld select.fsel:focus{outline:2px solid var(--ink);outline-offset:1px}
+
+  .foot{text-align:center;color:var(--ink-faint);font-size:11px;margin-top:22px;line-height:1.8;
+    font-family:var(--serif);letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -147,6 +241,22 @@
     <div class="task empty" id="taskName">此刻没有在记的事</div>
     <div class="clock" id="clock">00:00</div>
     <div class="sincelbl" id="sinceLbl"></div>
+
+    <!-- 今日之像 -->
+    <div class="portrait-wrap">
+      <svg class="portrait" id="portrait" viewBox="0 0 560 210" preserveAspectRatio="xMidYMid meet" aria-label="今日之像">
+        <defs>
+          <filter id="r0" x="-40%" y="-40%" width="180%" height="180%"><feTurbulence type="fractalNoise" baseFrequency="0.013 0.016" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <filter id="r1" x="-40%" y="-40%" width="180%" height="180%"><feTurbulence type="fractalNoise" baseFrequency="0.015 0.013" numOctaves="2" seed="17" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <filter id="r2" x="-40%" y="-40%" width="180%" height="180%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="31" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <filter id="r3" x="-40%" y="-40%" width="180%" height="180%"><feTurbulence type="fractalNoise" baseFrequency="0.016 0.015" numOctaves="2" seed="47" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <filter id="fuzz" x="-50%" y="-50%" width="200%" height="200%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="9" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter>
+        </defs>
+        <g id="strokes" style="mix-blend-mode:multiply"></g>
+        <g id="axis"></g>
+      </svg>
+      <div class="band-cap" id="bandCap"></div>
+    </div>
 
     <div class="starter" id="starter">
       <input id="taskInput" placeholder="现在开始做什么？" autocomplete="off" enterkeyhint="go">
@@ -168,16 +278,13 @@
 
   <!-- 今日结算 -->
   <section class="sec" id="todaySumSec" style="display:none">
-    <div class="sec-h"><h2>今日结算 · 按类别</h2></div>
+    <div class="sec-h"><h2>今日分布</h2></div>
     <div class="bars" id="todayBars"></div>
   </section>
 
   <!-- 近七天 -->
   <section class="sec" id="weekSec" style="display:none">
-    <div class="sec-h">
-      <h2>近 7 天 · 按类别</h2>
-      <button class="link" id="exportBtn">导出 CSV</button>
-    </div>
+    <div class="sec-h"><h2>近 7 天 · 分布</h2></div>
     <div class="bars" id="weekBars"></div>
   </section>
 
@@ -187,15 +294,27 @@
     <div class="ledger" id="historyList"></div>
   </section>
 
-  <div class="foot">柳比歇夫式连续记账 · 数据只存在这台设备上<br>结算用，不替代执行</div>
+  <!-- 工具 -->
+  <div class="tools">
+    <button id="backupBtn">备份 · 导出 JSON</button>
+    <button id="restoreBtn">恢复 · 导入 JSON</button>
+    <button id="exportBtn">导出 CSV</button>
+    <button id="catMgrBtn">类别</button>
+    <button id="wakeBtn">时段</button>
+    <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+  </div>
+
+  <div class="foot">记录时间，也看见时间<br>数据只留在你自己手里</div>
 </div>
+
+<datalist id="catList"></datalist>
 
 <!-- 补记 / 编辑 -->
 <dialog id="dlg">
   <div class="dg">
     <h3 id="dlgTitle">手动补记</h3>
-    <div class="fld"><label>做什么</label><input id="fName" autocomplete="off"></div>
-    <div class="fld"><label>类别（可空）</label><input id="fCat" autocomplete="off"></div>
+    <div class="fld"><label>做什么（具体事项）</label><input id="fName" autocomplete="off"></div>
+    <div class="fld"><label>大类</label><select id="fCat" class="fsel"></select></div>
     <div class="fld-2">
       <div class="fld"><label>开始</label><input id="fStart" type="datetime-local"></div>
       <div class="fld"><label>结束</label><input id="fEnd" type="datetime-local"></div>
@@ -208,18 +327,117 @@
   </div>
 </dialog>
 
+<!-- 类别管理 -->
+<dialog id="catDlg">
+  <div class="dg">
+    <h3>类别 · 保持一致</h3>
+    <div class="dg-note">▲▼ 调整顺序，点色块改颜色，点“改名”重命名（改成已存在的名字＝合并，留空＝取消分类）。大类建议控制在十个内，具体事情放“做什么”那栏。</div>
+    <div id="catMgrList"></div>
+    <button class="btn-addcat" id="addCatBtn">＋ 新增大类</button>
+    <div class="dg-act">
+      <button class="btn-ghost" id="catDlgClose">关闭</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 新增大类 / 改颜色 -->
+<dialog id="catEditDlg">
+  <div class="dg">
+    <h3 id="catEditTitle">新增大类</h3>
+    <div class="fld" id="catNameFld"><label>名称</label><input id="catNameInput" autocomplete="off" maxlength="12"></div>
+    <div class="fld"><label>颜色</label><div class="colorgrid" id="colorGrid"></div></div>
+    <div class="dg-act">
+      <button class="btn-ghost" id="catEditCancel">取消</button>
+      <button class="btn-primary" id="catEditSave">保存</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 清醒时段 -->
+<dialog id="wakeDlg">
+  <div class="dg">
+    <h3>清醒时段</h3>
+    <div class="dg-note">带子按你的清醒时段来画。默认 05:30–22:30，改成你自己的作息，只存在这台设备。</div>
+    <div class="fld-2">
+      <div class="fld"><label>起床</label><input id="wakeStart" type="time"></div>
+      <div class="fld"><label>入睡</label><input id="wakeEnd" type="time"></div>
+    </div>
+    <div class="dg-act">
+      <button class="btn-ghost" id="wakeCancel">取消</button>
+      <button class="btn-primary" id="wakeSave">保存</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
 "use strict";
 const KEY='hejishi_v1';
+const CATKEY='hejishi_cats_v1';
+const CATCOLKEY='hejishi_catcolors_v1';
+const WAKEKEY='hejishi_wake_v1';
 const $=id=>document.getElementById(id);
+/* 七个固定大类（第一级）· 手挑的和谐配色（张恩利肖像调性） */
+const PRESET_NAMES=['工作','生活','关系','投资','运动','自我','其他'];
+const PRESET_COLORS={工作:'#3556A8',生活:'#D69A34',关系:'#C65C77',投资:'#B23A42',运动:'#3E9A80',自我:'#7A4A78',其他:'#3A352E'};
+const OLD_COLORS={工作:'#5A7896',生活:'#C39A4E',关系:'#A56E72',投资:'#B0553D',运动:'#6E8A64',自我:'#7E5A86',其他:'#4A4640'};
+const PALETTE=Object.values(PRESET_COLORS);
+const SPARE=['#357068','#7E3A46','#5E4460','#8A7A44','#5A6E4A','#455C86'];
+const ALLCOLORS=[...PALETTE,...SPARE];
+const DEFAULT_ORDER=['生活','投资','关系','工作','自我','运动','其他'];
+const ORDERKEY='hejishi_order_v1';
+function loadOrder(){try{const o=JSON.parse(localStorage.getItem(ORDERKEY));if(Array.isArray(o)&&o.length===PRESET_NAMES.length&&o.every(x=>PRESET_NAMES.includes(x))&&PRESET_NAMES.every(x=>o.includes(x)))return o;}catch(e){}return DEFAULT_ORDER.slice();}
+function saveOrder(){try{localStorage.setItem(ORDERKEY,JSON.stringify(PRESET_CATS))}catch(e){}}
+let PRESET_CATS=loadOrder();   // 显示顺序（可手动调）
+const NEUTRAL_HEX='#A79C86';
 
 let entries=load();          // {id,name,cat,start,end}  end=null 表示正在跑
-let editingId=null;          // 补记/编辑中的 id
+let cats=loadCats();         // 规范类别集合（字符串数组）
+let catColors=loadCatColors();// {类别名: 颜色hex}
+let wake=loadWake();         // {start:'05:30', end:'22:30'}
+let editingId=null;
 let tick=null;
+let bandBeat=0;              // 控制带子重绘频率
 
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(entries))}catch(e){alert('保存失败：存储空间可能已满')}}
+function loadCats(){try{const c=JSON.parse(localStorage.getItem(CATKEY));return Array.isArray(c)?c:seedCats()}catch(e){return seedCats()}}
+function saveCats(){try{localStorage.setItem(CATKEY,JSON.stringify(cats))}catch(e){}}
+function loadCatColors(){try{const c=JSON.parse(localStorage.getItem(CATCOLKEY));return (c&&typeof c==='object')?c:{};}catch(e){return {};}}
+function saveCatColors(){try{localStorage.setItem(CATCOLKEY,JSON.stringify(catColors))}catch(e){}}
+function loadWake(){try{const w=JSON.parse(localStorage.getItem(WAKEKEY));if(w&&/^\d\d:\d\d$/.test(w.start)&&/^\d\d:\d\d$/.test(w.end))return w;}catch(e){}return {start:'05:30',end:'22:30'};}
+function saveWake(){try{localStorage.setItem(WAKEKEY,JSON.stringify(wake))}catch(e){}}
+function hmToH(s){const[a,b]=s.split(':').map(Number);return a+b/60;}
+function seedCats(){
+  const s=[];
+  entries.forEach(e=>{const c=normCat(e.cat);if(c&&!s.includes(c))s.push(c);});
+  return s;
+}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+/* ── 类别规范化 · 一致性 ── */
+function normCat(s){return (s||'').replace(/\s+/g,' ').trim();}
+function ensureCat(c){c=normCat(c);if(c&&!cats.includes(c)){cats.push(c);if(!catColors[c])catColors[c]=pickFreeColor();saveCats();saveCatColors();}return c;}
+function ensurePresets(){cats=[...PRESET_CATS,...cats.filter(c=>!PRESET_CATS.includes(c))];saveCats();}
+function ensureColors(){
+  PRESET_NAMES.forEach(c=>{if(!catColors[c])catColors[c]=PRESET_COLORS[c];});
+  cats.forEach(c=>{c=normCat(c);if(c&&!catColors[c])catColors[c]=pickFreeColor();});
+  saveCatColors();
+}
+function migrateColors(){
+  // 仍是旧默认色的预置类别 → 升级到画作亮色；手动改过的保留
+  PRESET_NAMES.forEach(c=>{if(catColors[c]===OLD_COLORS[c])catColors[c]=PRESET_COLORS[c];});
+  saveCatColors();
+}
+function pickFreeColor(){
+  const used=new Set(Object.values(catColors));
+  return ALLCOLORS.find(h=>!used.has(h))||ALLCOLORS[Math.floor(Math.random()*ALLCOLORS.length)];
+}
+function catColor(cat){return catHex(cat);}
+function catUsage(){
+  const m={};
+  entries.forEach(e=>{const c=normCat(e.cat);if(c)m[c]=(m[c]||0)+1;});
+  return m;
+}
 
 function running(){return entries.find(e=>e.end===null)||null}
 
@@ -239,14 +457,15 @@ function fmtDurShort(ms){
 function hhmm(ts){const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function dayKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function todayKey(){return dayKey(Date.now());}
+function startOfToday(){const d=new Date();d.setHours(0,0,0,0);return d.getTime();}
 
 /* ── 开始 / 停止（链式：开始新的自动停掉旧的）── */
 function start(name,cat){
   name=(name||'').trim();
   if(!name){$('taskInput').focus();return;}
   const r=running();
-  if(r){r.end=Date.now();}                         // 无缝接续
-  entries.push({id:uid(),name,cat:(cat||'').trim(),start:Date.now(),end:null});
+  if(r){r.end=Date.now();}
+  entries.push({id:uid(),name,cat:ensureCat(cat),start:Date.now(),end:null});
   save();render();$('taskInput').value='';selectedCat='';
 }
 function stop(){
@@ -254,15 +473,11 @@ function stop(){
   if(r){r.end=Date.now();save();render();}
 }
 
-/* ── 类别快捷 ── */
+/* ── 类别快捷 chips（按使用频次） ── */
 let selectedCat='';
-function recentCats(){
-  const seen=[];
-  for(let i=entries.length-1;i>=0 && seen.length<8;i--){
-    const c=entries[i].cat;
-    if(c && !seen.includes(c))seen.push(c);
-  }
-  return seen;
+function topCats(n){
+  const u=catUsage();
+  return cats.slice().sort((a,b)=>(u[b]||0)-(u[a]||0)).slice(0,n);
 }
 
 /* ── 结算 ── */
@@ -271,7 +486,7 @@ function sumByCat(list){
   list.forEach(e=>{
     const end=e.end===null?Date.now():e.end;
     const d=end-e.start;total+=d;
-    const c=e.cat||'（未分类）';
+    const c=normCat(e.cat)||'（未分类）';
     m[c]=(m[c]||0)+d;
   });
   return {rows:Object.entries(m).sort((a,b)=>b[1]-a[1]),total};
@@ -298,20 +513,127 @@ function render(){
     renderChips();
   }
   updateClock();
+  renderBand();
   renderLedger();
   renderSummaries();
   renderHistory();
+  renderDatalist();
+}
+
+function renderDatalist(){
+  const dl=$('catList');dl.innerHTML='';
+  topCats(40).forEach(c=>{const o=document.createElement('option');o.value=c;dl.appendChild(o);});
 }
 
 function renderChips(){
   const box=$('catChips');box.innerHTML='';
-  recentCats().forEach(c=>{
+  PRESET_CATS.forEach(c=>{
     const b=document.createElement('button');
     b.className='chip'+(c===selectedCat?' on':'');
-    b.textContent=c;
+    b.innerHTML=`<span class="sw" style="background:${catColor(c)}"></span>${esc(c)}`;
     b.onclick=()=>{selectedCat=(selectedCat===c?'':c);renderChips();};
     box.appendChild(b);
   });
+}
+
+/* ── 今日之像 ── */
+const LIVE_HEX='#B23A42';
+function wakeHours(){
+  let s=hmToH(wake.start), e=hmToH(wake.end);
+  if(!(e>s)){s=5.5;e=22.5;}                 // 跨午夜等异常：回退默认
+  return [clampN(s,0,23),clampN(e,s+1,24)];
+}
+function catHex(cat){
+  cat=normCat(cat);
+  if(!cat)return NEUTRAL_HEX;
+  if(catColors[cat])return catColors[cat];
+  if(PRESET_COLORS[cat])return PRESET_COLORS[cat];
+  let h=0;for(let k=0;k<cat.length;k++)h=(h*31+cat.charCodeAt(k))>>>0;
+  return ALLCOLORS[h%ALLCOLORS.length];
+}
+function hashId(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+function clampN(v,a,b){return v<a?a:v>b?b:v;}
+const F=n=>Number(n).toFixed(1);
+/* 造型库（以原点为中心；fill:0 描边 1 实心水滴 2 松软色团） */
+function shpSweep(s,a,d){return {d:`M${-s},0 C${-s*0.4},${-a*d} ${s*0.45},${-a*0.7*d} ${s},${a*0.25*d}`,fill:0};}
+function shpArc(s,a,d){return {d:`M${-s},0 Q0,${-a*1.5*d} ${s},0`,fill:0};}
+function shpWave(s,a,d){return {d:`M${-s},0 C${-s*0.35},${-a*d} ${s*0.35},${a*0.6*d} ${s},0`,fill:0};}
+function shpCaten(s,h,d){return {d:`M${-s},${-h*d} Q0,${h*1.5*d} ${s},${-h*d}`,fill:0};}
+function shpLoop(k,d){const p=(x,y)=>`${F(x*k)},${F(y*d*k)}`;return {d:`M${p(-36,17)} C${p(-72,-51)} ${p(52,-69)} ${p(58,-3)} C${p(62,45)} ${p(-24,51)} ${p(-42,11)}`,fill:0};}
+function shpCoil(s,r,d){let path=`M${-s},0`;const n=4,step=(2*s)/n;for(let i=0;i<n;i++){const x=-s+step*(i+1),cy=(i%2?r:-r)*d;path+=` Q${F(-s+step*i+step/2)},${F(cy)} ${F(x)},0`;}return {d:path,fill:0};}
+function shpRing(rx,ry){return {d:`M${-rx},0 a${F(rx)},${F(ry)} 0 1,0 ${F(2*rx)},0 a${F(rx)},${F(ry)} 0 1,0 ${F(-2*rx)},0`,fill:0};}
+function shpDrop(s,d){return {d:`M0,${-s*d} C${s*0.72},${-s*0.35*d} ${s*0.6},${s*0.7*d} 0,${s*d} C${-s*0.6},${s*0.7*d} ${-s*0.72},${-s*0.35*d} 0,${-s*d} Z`,fill:1};}
+function shpBlob(rx,ry){return {d:`M${-rx},0 a${F(rx)},${F(ry)} 0 1,0 ${F(2*rx)},0 a${F(rx)},${F(ry)} 0 1,0 ${F(-2*rx)},0`,fill:2};}
+function makeStroke(e,dur){
+  const col=catHex(e.cat);
+  const h=hashId(e.id);
+  const d=(h&1)?1:-1;
+  const mins=dur/60000;
+  const sf=clampN(0.55+mins/110,0.55,1.9);
+  const cx=clampN(52+(((h>>>2)%1000)/1000)*456,44,516);
+  const cy=clampN(30+(((h>>>13)%1000)/1000)*128,26,150);
+  const deg=((h>>>5)%91)-45;
+  const w=clampN(4+mins*0.05,4,13);
+  const kind=h%4, fi=h%4;
+  let shp;
+  if(mins>=110) shp=(h&2)?shpSweep(34*sf,14*sf+(h%10),d):shpCaten(30*sf,24*sf,d);
+  else if(mins>=45) shp=[shpArc(28*sf,20*sf+(h%8),d),shpWave(30*sf,18*sf+(h%10),d),shpCoil(28*sf,9*sf,d),shpRing(13*sf,16*sf)][kind];
+  else shp=[shpLoop(0.5*sf,d),shpDrop(11*sf,d),shpRing(11*sf,13*sf),shpLoop(0.42*sf,d)][kind];
+  const tr=`translate(${F(cx)},${F(cy)}) rotate(${deg})`;
+  if(shp.fill===1) return `<path d="${shp.d}" transform="${tr}" fill="${col}" opacity="${e.end===null?'0.68':'0.6'}" filter="url(#r${fi})"/>`;
+  if(shp.fill===2) return `<path d="${shp.d}" transform="${tr}" fill="${col}" opacity="0.22" filter="url(#fuzz)"/>`;
+  let op=0.46+clampN((w-4)/9,0,1)*0.16; if(e.end===null)op+=0.06;
+  return `<path d="${shp.d}" transform="${tr}" fill="none" stroke="${col}" stroke-width="${F(w)}" stroke-linecap="round" opacity="${op.toFixed(2)}" filter="url(#r${fi})"/>`;
+}
+
+function renderBand(){
+  const base=startOfToday();
+  const [sH,eH]=wakeHours();
+  const winS=base+sH*3600e3, winE=base+eH*3600e3, span=winE-winS;
+  const now=Date.now(), tk=todayKey();
+  const X=t=>30+clampN((t-winS)/span,0,1)*500;
+
+  const today=entries.filter(e=>dayKey(e.start)===tk).sort((a,b)=>a.start-b.start);
+  let accounted=0, strokes='', axis='';
+
+  // 精确轴：底轨 + 未记的过去
+  axis+=`<rect x="30" y="176" width="500" height="6" rx="3" fill="#00000010"/>`;
+  if(now>winS)axis+=`<rect x="30" y="176" width="${(X(Math.min(now,winE))-30).toFixed(1)}" height="6" rx="3" fill="#211C15" opacity="0.05"/>`;
+
+  today.forEach(e=>{
+    const end=e.end===null?now:e.end;
+    const dur=Math.max(0,end-e.start);
+    accounted+=dur;
+    const col=catHex(e.cat);
+
+    // 轴上的精确细段
+    const ax0=X(e.start), ax1=X(Math.min(end,winE));
+    if(ax1>ax0-0.1)axis+=`<rect x="${ax0.toFixed(1)}" y="176" width="${Math.max(ax1-ax0,1.6).toFixed(1)}" height="6" rx="2" fill="${col}" opacity="0.62"/>`;
+
+    // 肖像里的手绘造型（散布 · 旋转 · 造型库）
+    strokes+=makeStroke(e,dur);
+  });
+
+  // 此刻
+  if(now>=winS&&now<=winE){
+    const nx=X(now).toFixed(1);
+    axis+=`<line x1="${nx}" y1="8" x2="${nx}" y2="190" stroke="${LIVE_HEX}" stroke-width="1" opacity="0.4"/>`;
+    axis+=`<line x1="${nx}" y1="172" x2="${nx}" y2="190" stroke="${LIVE_HEX}" stroke-width="1.6"/>`;
+    axis+=`<path d="M${(X(now)-3).toFixed(1)},168 L${(X(now)+3).toFixed(1)},168 L${nx},174 Z" fill="${LIVE_HEX}"/>`;
+  }
+  const MONO="ui-monospace,'SF Mono',Menlo,monospace";
+  axis+=`<text x="30" y="201" font-family="${MONO}" font-size="10" fill="#A79C86">${wake.start}</text>`;
+  axis+=`<text x="530" y="201" text-anchor="end" font-family="${MONO}" font-size="10" fill="#A79C86">${wake.end}</text>`;
+
+  $('strokes').innerHTML=strokes;
+  $('axis').innerHTML=axis;
+
+  const elapsed=Math.max(0,Math.min(now,winE)-winS);
+  const bare=Math.max(0,elapsed-accounted);
+  const cap=$('bandCap');
+  const win=`<span style="color:var(--ink-faint)">· 清醒 ${wake.start}–${wake.end}</span>`;
+  if(elapsed<=0)cap.innerHTML=`今天还没开始 ${win}`;
+  else cap.innerHTML=`已记 <b>${fmtDurShort(accounted)}</b> · 未记 ${fmtDurShort(bare)} ${win}`;
 }
 
 function renderLedger(){
@@ -330,6 +652,7 @@ function renderLedger(){
     const row=document.createElement('div');row.className='row';
     row.innerHTML=
       `<div class="span">${hhmm(e.start)}<br>${e.end===null?'…':hhmm(e.end)}</div>`+
+      `<div class="tag" style="background:${catColor(e.cat)}"></div>`+
       `<div class="mid"><div class="nm">${esc(e.name)}</div><div class="cat">${esc(e.cat)}</div></div>`+
       `<div class="dur">${e.end===null?'计时中':fmtDurShort(end-e.start)}</div>`+
       `<button class="x" aria-label="编辑">✎</button>`;
@@ -344,25 +667,25 @@ function renderSummaries(){
   const tk=todayKey();
   const todayList=entries.filter(e=>dayKey(e.start)===tk);
   const t=sumByCat(todayList);
-  drawBars('todayBars',t.rows,t.total);
+  drawDist('todayBars',t.rows,t.total);
   $('todaySumSec').style.display=t.rows.length?'block':'none';
 
   const cut=Date.now()-7*864e5;
   const wk=entries.filter(e=>e.start>=cut);
   const w=sumByCat(wk);
-  drawBars('weekBars',w.rows,w.total);
+  drawDist('weekBars',w.rows,w.total);
   $('weekSec').style.display=w.rows.length?'block':'none';
 }
 
-let openDays={};   // dayKey -> 展开状态
+let openDays={};
 function renderHistory(){
   const box=$('historyList');box.innerHTML='';
   const tk=todayKey();
   const byDay={};
   entries.forEach(e=>{
-    if(e.end===null)return;                 // 正在跑的不入历史
+    if(e.end===null)return;
     const k=dayKey(e.start);
-    if(k===tk)return;                        // 今天归“今日流水”，不重复
+    if(k===tk)return;
     (byDay[k]=byDay[k]||[]).push(e);
   });
   const days=Object.keys(byDay).sort((a,b)=>byDay[b][0].start-byDay[a][0].start);
@@ -389,6 +712,7 @@ function renderHistory(){
       const row=document.createElement('div');row.className='row';
       row.innerHTML=
         `<div class="span">${hhmm(e.start)}<br>${hhmm(e.end)}</div>`+
+        `<div class="tag" style="background:${catColor(e.cat)}"></div>`+
         `<div class="mid"><div class="nm">${esc(e.name)}</div><div class="cat">${esc(e.cat)}</div></div>`+
         `<div class="dur">${fmtDurShort(e.end-e.start)}</div>`+
         `<button class="x" aria-label="编辑">✎</button>`;
@@ -402,19 +726,31 @@ function renderHistory(){
   });
 }
 
-function drawBars(id,rows,total){
+function durLabel(ms){return ms>0&&ms<60000?'不足1分':fmtDurShort(ms);}
+function drawDist(id,rows,total){
   const box=$(id);box.innerHTML='';
   if(!rows.length||total<=0)return;
-  const max=rows[0][1];
+  const colOf=cat=>cat==='（未分类）'?NEUTRAL_HEX:catColor(cat);
+  // 比例色带
+  let bar='<div class="dist-bar">';
   rows.forEach(([cat,ms])=>{
-    const el=document.createElement('div');el.className='bar';
-    const pct=(ms/max*100).toFixed(1);
-    const share=Math.round(ms/total*100);
-    el.innerHTML=`<div class="barh"><span>${esc(cat)}</span>`+
-      `<span class="d">${fmtDurShort(ms)} · ${share}%</span></div>`+
-      `<div class="track"><div class="fill" style="width:${pct}%"></div></div>`;
-    box.appendChild(el);
+    const w=(ms/total*100).toFixed(2);
+    bar+=`<span class="dist-seg" style="width:${w}%;background-color:${colOf(cat)}"></span>`;
   });
+  bar+='</div>';
+  // 图例
+  let leg='<div class="dist-legend">';
+  rows.forEach(([cat,ms])=>{
+    const share=Math.round(ms/total*100);
+    leg+=`<div class="dist-item">`+
+      `<span class="sw" style="background:${colOf(cat)}"></span>`+
+      `<span class="nm">${esc(cat)}</span>`+
+      `<span class="pct">${share}%</span>`+
+      `<span class="d">${durLabel(ms)}</span>`+
+      `</div>`;
+  });
+  leg+='</div>';
+  box.innerHTML=bar+leg;
 }
 
 function updateClock(){
@@ -427,10 +763,17 @@ function toLocalInput(ts){
   const d=new Date(ts-new Date().getTimezoneOffset()*60000);
   return d.toISOString().slice(0,16);
 }
+function populateCatSelect(selected){
+  const sel=$('fCat');sel.innerHTML='';
+  const add=(v,label)=>{const o=document.createElement('option');o.value=v;o.textContent=label;if(v===selected)o.selected=true;sel.appendChild(o);};
+  add('','未分类');
+  PRESET_CATS.forEach(c=>add(c,c));
+  if(selected&&!PRESET_CATS.includes(selected))add(selected,selected+'（旧）');
+}
 function openAdd(){
   editingId=null;
   $('dlgTitle').textContent='手动补记一段';
-  $('fName').value='';$('fCat').value='';
+  $('fName').value='';populateCatSelect('');
   const now=Date.now();
   $('fStart').value=toLocalInput(now-1800000);
   $('fEnd').value=toLocalInput(now);
@@ -441,7 +784,7 @@ function openEdit(id){
   const e=entries.find(x=>x.id===id);if(!e)return;
   editingId=id;
   $('dlgTitle').textContent='编辑记录';
-  $('fName').value=e.name;$('fCat').value=e.cat||'';
+  $('fName').value=e.name;populateCatSelect(normCat(e.cat));
   $('fStart').value=toLocalInput(e.start);
   $('fEnd').value=e.end===null?toLocalInput(Date.now()):toLocalInput(e.end);
   $('dlgDelete').style.display='block';
@@ -453,10 +796,10 @@ function saveDlg(){
   const s=new Date($('fStart').value).getTime();
   const en=new Date($('fEnd').value).getTime();
   if(isNaN(s)||isNaN(en)||en<=s){alert('结束时间要晚于开始时间');return;}
-  const cat=$('fCat').value.trim();
+  const cat=ensureCat($('fCat').value);
   if(editingId){
     const e=entries.find(x=>x.id===editingId);
-    e.name=name;e.cat=cat;e.start=s;e.end=en;   // 编辑后即为已结束段
+    e.name=name;e.cat=cat;e.start=s;e.end=en;
   }else{
     entries.push({id:uid(),name,cat,start:s,end:en});
   }
@@ -467,7 +810,105 @@ function delDlg(){
   $('dlg').close();render();
 }
 
-/* ── 导出 ── */
+/* ── 类别管理 · 改名 / 合并 ── */
+function openCatMgr(){renderCatMgr();$('catDlg').showModal();}
+function moveCat(name,dir){
+  const i=PRESET_CATS.indexOf(name); if(i<0)return;
+  const j=i+dir; if(j<0||j>=PRESET_CATS.length)return;
+  [PRESET_CATS[i],PRESET_CATS[j]]=[PRESET_CATS[j],PRESET_CATS[i]];
+  saveOrder();renderCatMgr();render();
+}
+function renderCatMgr(){
+  const box=$('catMgrList');box.innerHTML='';
+  const u=catUsage();
+  const legacy=cats.filter(c=>!PRESET_CATS.includes(c)).sort((a,b)=>(u[b]||0)-(u[a]||0));
+  const list=[...PRESET_CATS,...legacy];
+  if(list.length===0){box.innerHTML='<div class="cat-empty">还没有任何类别。新增一个，或记录时填一个就会出现在这里。</div>';return;}
+  list.forEach(c=>{
+    const isPreset=PRESET_CATS.includes(c);
+    const pi=PRESET_CATS.indexOf(c);
+    const row=document.createElement('div');row.className='catrow';
+    const upDis=(!isPreset||pi===0)?' disabled':'';
+    const dnDis=(!isPreset||pi===PRESET_CATS.length-1)?' disabled':'';
+    const ord=isPreset?`<span class="ord"><button class="mv"${upDis}>▲</button><button class="mv"${dnDis}>▼</button></span>`:`<span class="ord"></span>`;
+    row.innerHTML=ord+
+      `<button class="sw" style="background:${catColor(c)}" aria-label="改颜色"></button>`+
+      `<span class="cn">${esc(c)}</span>`+
+      `<span class="cc">${u[c]||0}段</span>`+
+      `<button class="ce">改名</button>`;
+    if(isPreset){
+      const mv=row.querySelectorAll('.mv');
+      if(!upDis)mv[0].onclick=()=>moveCat(c,-1);
+      if(!dnDis)mv[1].onclick=()=>moveCat(c,1);
+    }
+    row.querySelector('.sw').onclick=()=>openCatEdit('recolor',c);
+    row.querySelector('.ce').onclick=()=>renameCat(c);
+    box.appendChild(row);
+  });
+}
+function renameCat(oldName){
+  const nv=prompt(`把「${oldName}」改成：\n（改成已存在的名字＝合并；留空＝取消分类）`, oldName);
+  if(nv===null)return;
+  const nn=normCat(nv);
+  entries.forEach(e=>{if(normCat(e.cat)===oldName)e.cat=nn;});
+  cats=cats.filter(c=>c!==oldName);
+  if(nn&&!cats.includes(nn))cats.push(nn);
+  // 颜色随之迁移：合并时保留目标已有色，否则沿用原色
+  if(nn){if(!catColors[nn]&&catColors[oldName])catColors[nn]=catColors[oldName];}
+  if(oldName!==nn)delete catColors[oldName];
+  save();saveCats();saveCatColors();renderCatMgr();render();
+}
+
+/* ── 新增大类 / 改颜色 ── */
+let catEditMode='add', catEditTarget='', catEditColor='';
+function openCatEdit(mode,target){
+  catEditMode=mode; catEditTarget=target||'';
+  $('catEditTitle').textContent=mode==='add'?'新增大类':`改颜色 · ${target}`;
+  $('catNameFld').style.display=mode==='add'?'block':'none';
+  $('catNameInput').value='';
+  catEditColor=mode==='recolor'?catColor(target):pickFreeColor();
+  renderColorGrid();
+  $('catEditDlg').showModal();
+  if(mode==='add')setTimeout(()=>$('catNameInput').focus(),50);
+}
+function renderColorGrid(){
+  const grid=$('colorGrid');grid.innerHTML='';
+  const used=new Set(cats.filter(c=>c!==catEditTarget).map(c=>catColor(c)));
+  ALLCOLORS.forEach(hex=>{
+    const b=document.createElement('button');
+    b.className='sw'+(hex===catEditColor?' sel':'')+(used.has(hex)?' used':'');
+    b.style.background=hex;
+    b.title=used.has(hex)?'已被其它类别用':'';
+    b.onclick=()=>{catEditColor=hex;renderColorGrid();};
+    grid.appendChild(b);
+  });
+}
+function saveCatEdit(){
+  if(catEditMode==='add'){
+    const name=normCat($('catNameInput').value);
+    if(!name){$('catNameInput').focus();return;}
+    if(cats.includes(name)){alert('已经有这个大类了。');return;}
+    cats.push(name);catColors[name]=catEditColor;
+    saveCats();saveCatColors();
+  }else{
+    catColors[catEditTarget]=catEditColor;saveCatColors();
+  }
+  $('catEditDlg').close();renderCatMgr();render();
+}
+
+/* ── 清醒时段 ── */
+function openWake(){
+  $('wakeStart').value=wake.start;$('wakeEnd').value=wake.end;
+  $('wakeDlg').showModal();
+}
+function saveWake2(){
+  const s=$('wakeStart').value, e=$('wakeEnd').value;
+  if(!/^\d\d:\d\d$/.test(s)||!/^\d\d:\d\d$/.test(e)){alert('请设置起床和入睡时间');return;}
+  if(hmToH(e)<=hmToH(s)){alert('入睡时间要晚于起床时间（暂不支持跨午夜）');return;}
+  wake={start:s,end:e};saveWake();$('wakeDlg').close();render();
+}
+
+/* ── 导出 CSV ── */
 function exportCSV(){
   const rows=[['日期','开始','结束','时长(分)','做什么','类别']];
   [...entries].sort((a,b)=>a.start-b.start).forEach(e=>{
@@ -477,11 +918,72 @@ function exportCSV(){
       '"'+e.name.replace(/"/g,'""')+'"','"'+(e.cat||'').replace(/"/g,'""')+'"']);
   });
   const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
+  download('核时_'+todayKey()+'.csv','text/csv;charset=utf-8',csv);
+}
+
+/* ── 备份 / 恢复 JSON ── */
+function exportJSON(){
+  const payload={app:'heshi',v:1,exportedAt:Date.now(),entries,cats,catColors,wake};
+  download('核时备份_'+todayKey()+'.json','application/json',JSON.stringify(payload,null,2));
+}
+function download(filename,type,text){
+  const blob=new Blob([text],{type});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='核时_'+todayKey()+'.csv';
-  a.click();URL.revokeObjectURL(a.href);
+  a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importJSON(file){
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let data;
+    try{data=JSON.parse(rd.result);}catch(e){alert('这个文件不是有效的备份（无法解析 JSON）。');return;}
+    const incoming=Array.isArray(data)?data:(data&&Array.isArray(data.entries)?data.entries:null);
+    if(!incoming){alert('没找到可导入的记录。请确认选的是核时导出的备份文件。');return;}
+
+    // 校验 + 规范化
+    const clean=[];
+    incoming.forEach(e=>{
+      if(!e||typeof e!=='object')return;
+      const s=Number(e.start);
+      if(!isFinite(s))return;
+      const en=(e.end===null||e.end===undefined)?null:Number(e.end);
+      if(en!==null&&(!isFinite(en)||en<=s))return;
+      clean.push({
+        id:(typeof e.id==='string'&&e.id)?e.id:uid(),
+        name:String(e.name||'（未命名）'),
+        cat:normCat(e.cat),
+        start:s, end:en
+      });
+    });
+    if(!clean.length){alert('备份里没有有效记录。');return;}
+
+    if(!confirm(`将导入 ${clean.length} 段记录，与本机已有的合并（相同记录不会重复）。继续？`))return;
+
+    // 按 id 合并去重
+    const byId={};entries.forEach(e=>byId[e.id]=e);
+    let added=0;
+    clean.forEach(e=>{if(!byId[e.id]){byId[e.id]=e;added++;}});
+    entries=Object.values(byId);
+
+    // 合并后若有多个"正在跑"，只保留最新开始的那个
+    const runs=entries.filter(e=>e.end===null).sort((a,b)=>b.start-a.start);
+    runs.slice(1).forEach(e=>{e.end=Date.now();});
+
+    // 合并类别集合
+    if(data&&Array.isArray(data.cats))data.cats.forEach(c=>{c=normCat(c);if(c&&!cats.includes(c))cats.push(c);});
+    entries.forEach(e=>{const c=normCat(e.cat);if(c&&!cats.includes(c))cats.push(c);});
+    // 合并类别颜色（不覆盖本机已有）
+    if(data&&data.catColors&&typeof data.catColors==='object')
+      Object.entries(data.catColors).forEach(([k,v])=>{k=normCat(k);if(k&&!catColors[k]&&typeof v==='string')catColors[k]=v;});
+    ensureColors();
+
+    save();saveCats();saveCatColors();render();
+    alert(`导入完成：新增 ${added} 段，已有 ${clean.length-added} 段跳过。`);
+  };
+  rd.onerror=()=>alert('读取文件失败，请重试。');
+  rd.readAsText(file);
 }
 
 function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -495,12 +997,32 @@ $('dlgSave').onclick=saveDlg;
 $('dlgCancel').onclick=()=>$('dlg').close();
 $('dlgDelete').onclick=delDlg;
 $('exportBtn').onclick=exportCSV;
+$('backupBtn').onclick=exportJSON;
+$('restoreBtn').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=e=>{const f=e.target.files[0];if(f)importJSON(f);e.target.value='';};
+$('catMgrBtn').onclick=openCatMgr;
+$('catDlgClose').onclick=()=>$('catDlg').close();
+$('addCatBtn').onclick=()=>openCatEdit('add');
+$('catEditSave').onclick=saveCatEdit;
+$('catEditCancel').onclick=()=>$('catEditDlg').close();
+$('wakeBtn').onclick=openWake;
+$('wakeSave').onclick=saveWake2;
+$('wakeCancel').onclick=()=>$('wakeDlg').close();
 
 /* 日期头 */
 (function(){const d=new Date();const wk=['日','一','二','三','四','五','六'][d.getDay()];
   $('today').textContent=`${d.getMonth()+1}月${d.getDate()}日 周${wk}`;})();
 
-tick=setInterval(()=>{if(running())updateClock();},1000);
+ensurePresets();
+migrateColors();
+ensureColors();
+
+tick=setInterval(()=>{
+  if(running()){
+    updateClock();
+    if((bandBeat++%10)===0){renderBand();renderLedger();renderSummaries();}
+  }
+},1000);
 render();
 </script>
 </body>
