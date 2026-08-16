@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>核时 · 时间流水账</title>
+<style>
+  :root{
+    --paper:#F6F5F1; --card:#FFFFFF; --ink:#1B1E22; --ink-soft:#5B616A;
+    --ink-faint:#A2A7AE; --rule:#E5E3DC; --live:#1E8A6E; --live-soft:#E3F1EC;
+    --danger:#B04A3A; --mono:ui-monospace,'SF Mono',Menlo,'Roboto Mono',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--sans);
+    line-height:1.5;padding:env(safe-area-inset-top) 0 40px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 18px}
+  header{padding:20px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  header h1{font-size:15px;font-weight:600;letter-spacing:.14em;margin:0}
+  header .date{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
+
+  /* ── HERO: the one clock, running or idle ── */
+  .now{
+    background:var(--card);border:1px solid var(--rule);border-radius:14px;
+    padding:20px 18px 18px;margin-top:6px;position:relative;overflow:hidden;
+  }
+  .now.live{border-color:var(--live)}
+  .now .status{
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+    display:flex;align-items:center;gap:8px;
+  }
+  .now.live .status{color:var(--live)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);flex:none}
+  .now.live .dot{background:var(--live);animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  @media (prefers-reduced-motion:reduce){.now.live .dot{animation:none}}
+
+  .now .task{font-size:19px;font-weight:600;margin:10px 0 2px;min-height:26px;word-break:break-word}
+  .now .task.empty{color:var(--ink-faint);font-weight:400}
+  .clock{font-family:var(--mono);font-size:44px;font-weight:600;letter-spacing:.01em;
+    line-height:1;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+  .now.live .clock{color:var(--live)}
+  .now:not(.live) .clock{color:var(--ink-faint)}
+  .sincelbl{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+
+  .starter{display:flex;gap:8px;margin-top:14px}
+  .starter input{
+    flex:1;min-width:0;font-family:var(--sans);font-size:16px;padding:11px 12px;
+    border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink);
+  }
+  .starter input:focus{outline:2px solid var(--ink);outline-offset:1px;background:#fff}
+
+  button{font-family:var(--sans);cursor:pointer;border:none;font-size:15px}
+  .btn-primary{
+    padding:11px 20px;border-radius:10px;background:var(--ink);color:#fff;font-weight:600;flex:none;
+  }
+  .btn-primary:active{transform:translateY(1px)}
+  .btn-stop{background:var(--live)}
+  .btn-block{width:100%;margin-top:12px;padding:13px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{padding:6px 11px;border-radius:20px;border:1px solid var(--rule);background:#fff;
+    font-size:13px;color:var(--ink-soft)}
+  .chip:active{background:var(--paper)}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* ── section headings ── */
+  .sec{margin-top:26px}
+  .sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px}
+  .sec-h h2{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0}
+  .sec-h .tot{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+  .link{background:none;color:var(--ink-soft);font-size:12px;padding:4px;text-decoration:underline;text-underline-offset:2px}
+
+  /* ── ledger rows ── */
+  .ledger{background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+  .row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--rule)}
+  .row:first-child{border-top:none}
+  .row .span{font-family:var(--mono);font-size:12px;color:var(--ink-faint);flex:none;width:92px;line-height:1.35}
+  .row .mid{flex:1;min-width:0}
+  .row .nm{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .cat{font-size:11.5px;color:var(--ink-soft)}
+  .row .cat:empty{display:none}
+  .row .dur{font-family:var(--mono);font-size:14px;font-weight:600;flex:none;font-variant-numeric:tabular-nums}
+  .row .x{flex:none;color:var(--ink-faint);background:none;font-size:18px;padding:2px 4px;line-height:1}
+  .row:active{background:var(--paper)}
+  .empty-note{padding:22px 14px;text-align:center;color:var(--ink-faint);font-size:14px}
+
+  /* ── totals bars ── */
+  .bars{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:6px 14px}
+  .bar{padding:9px 0;border-top:1px solid var(--rule)}
+  .bar:first-child{border-top:none}
+  .bar .barh{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px}
+  .bar .barh .d{font-family:var(--mono);color:var(--ink-soft)}
+  .track{height:6px;background:var(--paper);border-radius:3px;overflow:hidden}
+  .fill{height:100%;background:var(--ink);border-radius:3px}
+
+  /* ── history by day ── */
+  .dayhead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--rule)}
+  .dayhead:first-child{border-top:none}
+  .dayhead .cv{flex:none;width:16px;color:var(--ink-faint);font-family:var(--mono);font-size:13px;transition:transform .15s}
+  .dayhead.open .cv{transform:rotate(90deg)}
+  .dayhead .dd{flex:1;font-size:14.5px;font-weight:600}
+  .dayhead .dsub{font-family:var(--mono);font-size:12px;color:var(--ink-faint);font-weight:400;margin-left:8px}
+  .dayhead .dtot{font-family:var(--mono);font-size:13px;color:var(--ink-soft);flex:none}
+  .dayhead:active{background:var(--paper)}
+  .daybody{display:none}
+  .daybody.open{display:block}
+  .daybody .row{padding-left:30px;background:var(--paper)}
+
+  /* ── manual form ── */
+  dialog{border:none;border-radius:16px;padding:0;max-width:420px;width:calc(100% - 32px);
+    box-shadow:0 20px 60px rgba(0,0,0,.28);background:var(--card)}
+  dialog::backdrop{background:rgba(20,22,25,.4)}
+  .dg{padding:20px}
+  .dg h3{margin:0 0 16px;font-size:15px;letter-spacing:.04em}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:5px}
+  .fld input{width:100%;font-family:var(--sans);font-size:16px;padding:10px 11px;
+    border:1px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink)}
+  .fld input:focus{outline:2px solid var(--ink);outline-offset:1px;background:#fff}
+  .fld-2{display:flex;gap:10px}.fld-2 .fld{flex:1}
+  .dg-act{display:flex;gap:10px;margin-top:8px}
+  .dg-act button{flex:1;padding:12px;border-radius:10px}
+  .btn-ghost{background:var(--paper);color:var(--ink-soft)}
+  .btn-del{background:none;color:var(--danger);font-size:13px;padding:8px;text-align:center;width:100%;margin-top:4px}
+  .foot{text-align:center;color:var(--ink-faint);font-size:11px;margin-top:26px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>核 时</h1>
+    <span class="date" id="today"></span>
+  </header>
+
+  <!-- 唯一的钟：正在跑，或空闲 -->
+  <section class="now" id="now">
+    <div class="status"><span class="dot"></span><span id="statusText">未在计时</span></div>
+    <div class="task empty" id="taskName">此刻没有在记的事</div>
+    <div class="clock" id="clock">00:00</div>
+    <div class="sincelbl" id="sinceLbl"></div>
+
+    <div class="starter" id="starter">
+      <input id="taskInput" placeholder="现在开始做什么？" autocomplete="off" enterkeyhint="go">
+      <button class="btn-primary" id="startBtn">开始</button>
+    </div>
+    <div class="chips" id="catChips"></div>
+    <button class="btn-primary btn-stop btn-block" id="stopBtn" style="display:none">停止并记下</button>
+  </section>
+
+  <!-- 今日流水 -->
+  <section class="sec">
+    <div class="sec-h">
+      <h2>今日流水</h2>
+      <span class="tot" id="todayTotal"></span>
+    </div>
+    <div class="ledger" id="ledger"></div>
+    <button class="link" id="addManual" style="margin-top:8px">＋ 手动补记一段</button>
+  </section>
+
+  <!-- 今日结算 -->
+  <section class="sec" id="todaySumSec" style="display:none">
+    <div class="sec-h"><h2>今日结算 · 按类别</h2></div>
+    <div class="bars" id="todayBars"></div>
+  </section>
+
+  <!-- 近七天 -->
+  <section class="sec" id="weekSec" style="display:none">
+    <div class="sec-h">
+      <h2>近 7 天 · 按类别</h2>
+      <button class="link" id="exportBtn">导出 CSV</button>
+    </div>
+    <div class="bars" id="weekBars"></div>
+  </section>
+
+  <!-- 历史 · 按天 -->
+  <section class="sec" id="historySec" style="display:none">
+    <div class="sec-h"><h2>历史 · 按天</h2></div>
+    <div class="ledger" id="historyList"></div>
+  </section>
+
+  <div class="foot">柳比歇夫式连续记账 · 数据只存在这台设备上<br>结算用，不替代执行</div>
+</div>
+
+<!-- 补记 / 编辑 -->
+<dialog id="dlg">
+  <div class="dg">
+    <h3 id="dlgTitle">手动补记</h3>
+    <div class="fld"><label>做什么</label><input id="fName" autocomplete="off"></div>
+    <div class="fld"><label>类别（可空）</label><input id="fCat" autocomplete="off"></div>
+    <div class="fld-2">
+      <div class="fld"><label>开始</label><input id="fStart" type="datetime-local"></div>
+      <div class="fld"><label>结束</label><input id="fEnd" type="datetime-local"></div>
+    </div>
+    <div class="dg-act">
+      <button class="btn-ghost" id="dlgCancel">取消</button>
+      <button class="btn-primary" id="dlgSave">保存</button>
+    </div>
+    <button class="btn-del" id="dlgDelete" style="display:none">删除这段记录</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+const KEY='hejishi_v1';
+const $=id=>document.getElementById(id);
+
+let entries=load();          // {id,name,cat,start,end}  end=null 表示正在跑
+let editingId=null;          // 补记/编辑中的 id
+let tick=null;
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(entries))}catch(e){alert('保存失败：存储空间可能已满')}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+function running(){return entries.find(e=>e.end===null)||null}
+
+function fmtDur(ms){
+  let s=Math.max(0,Math.round(ms/1000));
+  const h=Math.floor(s/3600);s-=h*3600;
+  const m=Math.floor(s/60);s-=m*60;
+  const pad=n=>String(n).padStart(2,'0');
+  return h>0?`${h}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;
+}
+function fmtDurShort(ms){
+  const m=Math.round(ms/60000);
+  if(m<60)return m+'分';
+  const h=Math.floor(m/60),r=m%60;
+  return r?`${h}时${r}分`:`${h}时`;
+}
+function hhmm(ts){const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function dayKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function todayKey(){return dayKey(Date.now());}
+
+/* ── 开始 / 停止（链式：开始新的自动停掉旧的）── */
+function start(name,cat){
+  name=(name||'').trim();
+  if(!name){$('taskInput').focus();return;}
+  const r=running();
+  if(r){r.end=Date.now();}                         // 无缝接续
+  entries.push({id:uid(),name,cat:(cat||'').trim(),start:Date.now(),end:null});
+  save();render();$('taskInput').value='';selectedCat='';
+}
+function stop(){
+  const r=running();
+  if(r){r.end=Date.now();save();render();}
+}
+
+/* ── 类别快捷 ── */
+let selectedCat='';
+function recentCats(){
+  const seen=[];
+  for(let i=entries.length-1;i>=0 && seen.length<8;i--){
+    const c=entries[i].cat;
+    if(c && !seen.includes(c))seen.push(c);
+  }
+  return seen;
+}
+
+/* ── 结算 ── */
+function sumByCat(list){
+  const m={};let total=0;
+  list.forEach(e=>{
+    const end=e.end===null?Date.now():e.end;
+    const d=end-e.start;total+=d;
+    const c=e.cat||'（未分类）';
+    m[c]=(m[c]||0)+d;
+  });
+  return {rows:Object.entries(m).sort((a,b)=>b[1]-a[1]),total};
+}
+
+/* ── 渲染 ── */
+function render(){
+  const r=running();
+  const now=$('now');
+  if(r){
+    now.classList.add('live');
+    $('statusText').textContent='计时中';
+    $('taskName').textContent=r.name;$('taskName').classList.remove('empty');
+    $('sinceLbl').textContent='起 '+hhmm(r.start);
+    $('starter').style.display='none';$('catChips').style.display='none';
+    $('stopBtn').style.display='block';
+  }else{
+    now.classList.remove('live');
+    $('statusText').textContent='未在计时';
+    $('taskName').textContent='此刻没有在记的事';$('taskName').classList.add('empty');
+    $('clock').textContent='00:00';$('sinceLbl').textContent='';
+    $('starter').style.display='flex';$('catChips').style.display='flex';
+    $('stopBtn').style.display='none';
+    renderChips();
+  }
+  updateClock();
+  renderLedger();
+  renderSummaries();
+  renderHistory();
+}
+
+function renderChips(){
+  const box=$('catChips');box.innerHTML='';
+  recentCats().forEach(c=>{
+    const b=document.createElement('button');
+    b.className='chip'+(c===selectedCat?' on':'');
+    b.textContent=c;
+    b.onclick=()=>{selectedCat=(selectedCat===c?'':c);renderChips();};
+    box.appendChild(b);
+  });
+}
+
+function renderLedger(){
+  const box=$('ledger');
+  const tk=todayKey();
+  const today=entries.filter(e=>dayKey(e.start)===tk).sort((a,b)=>b.start-a.start);
+  box.innerHTML='';
+  if(today.length===0){
+    box.innerHTML='<div class="empty-note">今天还没有记录。开始上面的第一段。</div>';
+    $('todayTotal').textContent='';return;
+  }
+  let tracked=0;
+  today.forEach(e=>{
+    const end=e.end===null?Date.now():e.end;
+    tracked+=end-e.start;
+    const row=document.createElement('div');row.className='row';
+    row.innerHTML=
+      `<div class="span">${hhmm(e.start)}<br>${e.end===null?'…':hhmm(e.end)}</div>`+
+      `<div class="mid"><div class="nm">${esc(e.name)}</div><div class="cat">${esc(e.cat)}</div></div>`+
+      `<div class="dur">${e.end===null?'计时中':fmtDurShort(end-e.start)}</div>`+
+      `<button class="x" aria-label="编辑">✎</button>`;
+    row.querySelector('.x').onclick=(ev)=>{ev.stopPropagation();openEdit(e.id);};
+    row.onclick=()=>openEdit(e.id);
+    box.appendChild(row);
+  });
+  $('todayTotal').textContent='共 '+fmtDurShort(tracked);
+}
+
+function renderSummaries(){
+  const tk=todayKey();
+  const todayList=entries.filter(e=>dayKey(e.start)===tk);
+  const t=sumByCat(todayList);
+  drawBars('todayBars',t.rows,t.total);
+  $('todaySumSec').style.display=t.rows.length?'block':'none';
+
+  const cut=Date.now()-7*864e5;
+  const wk=entries.filter(e=>e.start>=cut);
+  const w=sumByCat(wk);
+  drawBars('weekBars',w.rows,w.total);
+  $('weekSec').style.display=w.rows.length?'block':'none';
+}
+
+let openDays={};   // dayKey -> 展开状态
+function renderHistory(){
+  const box=$('historyList');box.innerHTML='';
+  const tk=todayKey();
+  const byDay={};
+  entries.forEach(e=>{
+    if(e.end===null)return;                 // 正在跑的不入历史
+    const k=dayKey(e.start);
+    if(k===tk)return;                        // 今天归“今日流水”，不重复
+    (byDay[k]=byDay[k]||[]).push(e);
+  });
+  const days=Object.keys(byDay).sort((a,b)=>byDay[b][0].start-byDay[a][0].start);
+  if(days.length===0){$('historySec').style.display='none';return;}
+  $('historySec').style.display='block';
+
+  days.forEach(k=>{
+    const list=byDay[k].sort((a,b)=>b.start-a.start);
+    let tot=0;list.forEach(e=>tot+=e.end-e.start);
+    const d=new Date(list[0].start);
+    const wk=['日','一','二','三','四','五','六'][d.getDay()];
+    const isOpen=!!openDays[k];
+
+    const head=document.createElement('div');
+    head.className='dayhead'+(isOpen?' open':'');
+    head.innerHTML=`<span class="cv">▸</span>`+
+      `<span class="dd">${d.getMonth()+1}月${d.getDate()}日<span class="dsub">周${wk} · ${list.length}段</span></span>`+
+      `<span class="dtot">${fmtDurShort(tot)}</span>`;
+    box.appendChild(head);
+
+    const body=document.createElement('div');
+    body.className='daybody'+(isOpen?' open':'');
+    list.forEach(e=>{
+      const row=document.createElement('div');row.className='row';
+      row.innerHTML=
+        `<div class="span">${hhmm(e.start)}<br>${hhmm(e.end)}</div>`+
+        `<div class="mid"><div class="nm">${esc(e.name)}</div><div class="cat">${esc(e.cat)}</div></div>`+
+        `<div class="dur">${fmtDurShort(e.end-e.start)}</div>`+
+        `<button class="x" aria-label="编辑">✎</button>`;
+      row.querySelector('.x').onclick=(ev)=>{ev.stopPropagation();openEdit(e.id);};
+      row.onclick=()=>openEdit(e.id);
+      body.appendChild(row);
+    });
+    box.appendChild(body);
+
+    head.onclick=()=>{openDays[k]=!openDays[k];renderHistory();};
+  });
+}
+
+function drawBars(id,rows,total){
+  const box=$(id);box.innerHTML='';
+  if(!rows.length||total<=0)return;
+  const max=rows[0][1];
+  rows.forEach(([cat,ms])=>{
+    const el=document.createElement('div');el.className='bar';
+    const pct=(ms/max*100).toFixed(1);
+    const share=Math.round(ms/total*100);
+    el.innerHTML=`<div class="barh"><span>${esc(cat)}</span>`+
+      `<span class="d">${fmtDurShort(ms)} · ${share}%</span></div>`+
+      `<div class="track"><div class="fill" style="width:${pct}%"></div></div>`;
+    box.appendChild(el);
+  });
+}
+
+function updateClock(){
+  const r=running();
+  if(r)$('clock').textContent=fmtDur(Date.now()-r.start);
+}
+
+/* ── 补记 / 编辑 ── */
+function toLocalInput(ts){
+  const d=new Date(ts-new Date().getTimezoneOffset()*60000);
+  return d.toISOString().slice(0,16);
+}
+function openAdd(){
+  editingId=null;
+  $('dlgTitle').textContent='手动补记一段';
+  $('fName').value='';$('fCat').value='';
+  const now=Date.now();
+  $('fStart').value=toLocalInput(now-1800000);
+  $('fEnd').value=toLocalInput(now);
+  $('dlgDelete').style.display='none';
+  $('dlg').showModal();
+}
+function openEdit(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  editingId=id;
+  $('dlgTitle').textContent='编辑记录';
+  $('fName').value=e.name;$('fCat').value=e.cat||'';
+  $('fStart').value=toLocalInput(e.start);
+  $('fEnd').value=e.end===null?toLocalInput(Date.now()):toLocalInput(e.end);
+  $('dlgDelete').style.display='block';
+  $('dlg').showModal();
+}
+function saveDlg(){
+  const name=$('fName').value.trim();
+  if(!name){$('fName').focus();return;}
+  const s=new Date($('fStart').value).getTime();
+  const en=new Date($('fEnd').value).getTime();
+  if(isNaN(s)||isNaN(en)||en<=s){alert('结束时间要晚于开始时间');return;}
+  const cat=$('fCat').value.trim();
+  if(editingId){
+    const e=entries.find(x=>x.id===editingId);
+    e.name=name;e.cat=cat;e.start=s;e.end=en;   // 编辑后即为已结束段
+  }else{
+    entries.push({id:uid(),name,cat,start:s,end:en});
+  }
+  save();$('dlg').close();render();
+}
+function delDlg(){
+  if(editingId){entries=entries.filter(x=>x.id!==editingId);save();}
+  $('dlg').close();render();
+}
+
+/* ── 导出 ── */
+function exportCSV(){
+  const rows=[['日期','开始','结束','时长(分)','做什么','类别']];
+  [...entries].sort((a,b)=>a.start-b.start).forEach(e=>{
+    const end=e.end===null?Date.now():e.end;
+    rows.push([dayKey(e.start),new Date(e.start).toLocaleString('zh-CN'),
+      new Date(end).toLocaleString('zh-CN'),Math.round((end-e.start)/60000),
+      '"'+e.name.replace(/"/g,'""')+'"','"'+(e.cat||'').replace(/"/g,'""')+'"']);
+  });
+  const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='核时_'+todayKey()+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ── 绑定 ── */
+$('startBtn').onclick=()=>start($('taskInput').value,selectedCat);
+$('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')start($('taskInput').value,selectedCat);});
+$('stopBtn').onclick=stop;
+$('addManual').onclick=openAdd;
+$('dlgSave').onclick=saveDlg;
+$('dlgCancel').onclick=()=>$('dlg').close();
+$('dlgDelete').onclick=delDlg;
+$('exportBtn').onclick=exportCSV;
+
+/* 日期头 */
+(function(){const d=new Date();const wk=['日','一','二','三','四','五','六'][d.getDay()];
+  $('today').textContent=`${d.getMonth()+1}月${d.getDate()}日 周${wk}`;})();
+
+tick=setInterval(()=>{if(running())updateClock();},1000);
+render();
+</script>
+</body>
+</html>
