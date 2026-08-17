@@ -226,9 +226,45 @@
 
   .foot{text-align:center;color:var(--ink-faint);font-size:11px;margin-top:22px;line-height:1.8;
     font-family:var(--serif);letter-spacing:.04em}
+
+  /* ── 登录（极简 · Apple 调性）── */
+  #authScreen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    background:#fff;padding:24px;padding-top:calc(env(safe-area-inset-top) + 24px)}
+  .auth-card{width:100%;max-width:300px;text-align:center;opacity:0;transition:opacity .25s ease}
+  #authScreen.ready .auth-card{opacity:1}
+  .auth-brand{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.24em;color:#1d1d1f;margin-left:.24em}
+  .auth-sub{font-size:13px;color:#86868b;margin:6px 0 26px}
+  #authScreen input[type=email],#authScreen input[type=password]{
+    width:100%;height:46px;border:1px solid #d2d2d7;border-radius:12px;padding:0 14px;margin-bottom:10px;
+    font-size:16px;font-family:var(--sans);color:#1d1d1f;background:#fff;outline:none;transition:border-color .15s}
+  #authScreen input[type=email]:focus,#authScreen input[type=password]:focus{border-color:#1d1d1f}
+  .auth-remember{display:flex;align-items:center;gap:7px;justify-content:center;
+    font-size:13px;color:#86868b;margin:2px 0 16px;cursor:pointer;user-select:none}
+  .auth-remember input{width:15px;height:15px;accent-color:#1d1d1f}
+  .auth-btn{width:100%;height:46px;border:none;border-radius:12px;background:#1d1d1f;color:#fff;
+    font-size:16px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:opacity .15s}
+  .auth-btn:active{opacity:.8}
+  .auth-btn:disabled{opacity:.5;cursor:default}
+  .auth-err{min-height:18px;font-size:13px;color:#d1453b;margin-top:12px}
+  .auth-toggle{font-size:13px;color:#86868b;margin-top:6px}
+  .auth-toggle a{color:#1d1d1f;cursor:pointer;font-weight:500}
 </style>
 </head>
 <body>
+<!-- 登录界面（默认盖住整页；已登录会自动隐藏）-->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand">核 时</div>
+    <div class="auth-sub">记录时间，也看见时间</div>
+    <input id="authEmail" type="email" placeholder="邮箱" autocomplete="email" enterkeyhint="next">
+    <input id="authPw" type="password" placeholder="密码" autocomplete="current-password" enterkeyhint="go">
+    <label class="auth-remember"><input type="checkbox" id="authRemember" checked><span>记住我（30 天内免登录）</span></label>
+    <button id="authSubmit" class="auth-btn">登录</button>
+    <div class="auth-err" id="authErr"></div>
+    <div class="auth-toggle" id="authToggle"></div>
+  </div>
+</div>
+
 <div class="wrap">
   <header>
     <h1>核 时</h1>
@@ -301,6 +337,7 @@
     <button id="exportBtn">导出 CSV</button>
     <button id="catMgrBtn">类别</button>
     <button id="wakeBtn">时段</button>
+    <button id="signOutBtn">退出</button>
     <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
   </div>
 
@@ -399,7 +436,7 @@ let tick=null;
 let bandBeat=0;              // 控制带子重绘频率
 
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(entries))}catch(e){alert('保存失败：存储空间可能已满')}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(entries))}catch(e){alert('保存失败：存储空间可能已满')}cloudSync();}
 function loadCats(){try{const c=JSON.parse(localStorage.getItem(CATKEY));return Array.isArray(c)?c:seedCats()}catch(e){return seedCats()}}
 function saveCats(){try{localStorage.setItem(CATKEY,JSON.stringify(cats))}catch(e){}}
 function loadCatColors(){try{const c=JSON.parse(localStorage.getItem(CATCOLKEY));return (c&&typeof c==='object')?c:{};}catch(e){return {};}}
@@ -1013,17 +1050,199 @@ $('wakeCancel').onclick=()=>$('wakeDlg').close();
 (function(){const d=new Date();const wk=['日','一','二','三','四','五','六'][d.getDay()];
   $('today').textContent=`${d.getMonth()+1}月${d.getDate()}日 周${wk}`;})();
 
-ensurePresets();
-migrateColors();
-ensureColors();
+/* ═══════════ 登录 + 云同步（Supabase）═══════════ */
+const SUPA_URL='https://okypnukaikexjcwpywmt.supabase.co';
+// anon key 是公开钥匙，放前端是设计如此；数据安全由数据库的 RLS 规则保证
+const SUPA_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9reXBudWthaWtleGpjd3B5d210Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzEyMDksImV4cCI6MjEwMjU0NzIwOX0.uFd_uxgz7xpnTXAJriQC0oW_1gFTgJmeplj089W9K00';
+const REMEMBER_KEY='heshi_remember_until';
+const REMEMBER_DAYS=30;
 
-tick=setInterval(()=>{
-  if(running()){
-    updateClock();
-    if((bandBeat++%10)===0){renderBand();renderLedger();renderSummaries();}
+// 记住我=会话存 localStorage（关浏览器也在，30 天内免登录）；不记住=存 sessionStorage（关浏览器即退）
+function rememberValid(){const t=+localStorage.getItem(REMEMBER_KEY)||0;return t>Date.now();}
+const authStorage={
+  getItem(k){return (rememberValid()?localStorage:sessionStorage).getItem(k);},
+  setItem(k,v){(rememberValid()?localStorage:sessionStorage).setItem(k,v);},
+  removeItem(k){localStorage.removeItem(k);sessionStorage.removeItem(k);}
+};
+
+let sb=null;
+// 动态加载 Supabase 库：不阻塞页面渲染；离线/超时自动放弃，转本地模式
+function loadSupabaseLib(timeout=4000){
+  return new Promise(resolve=>{
+    if(window.supabase) return resolve(true);
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onload=()=>resolve(true);
+    s.onerror=()=>resolve(false);
+    document.head.appendChild(s);
+    setTimeout(()=>resolve(!!window.supabase),timeout);
+  });
+}
+function makeClient(){
+  try{if(window.supabase) sb=window.supabase.createClient(SUPA_URL,SUPA_ANON,{
+    auth:{storage:authStorage,persistSession:true,autoRefreshToken:true,storageKey:'heshi_auth'}
+  });}catch(e){console.warn('Supabase 初始化失败：',e);sb=null;}
+  return sb;
+}
+
+let currentUser=null, CLOUD_ON=false, syncing=false, dirty=false;
+
+// 读云端：把当前用户的记录拉成本地同款结构
+async function cloudPull(){
+  if(!sb) return null;
+  try{
+    // 加 5 秒超时：断网时不让它一直挂着，超时就当读取失败、转本地
+    const res=await Promise.race([
+      sb.from('entries').select('id,name,cat,start_time,end_time'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000))
+    ]);
+    const {data,error}=res;
+    if(error) throw error;
+    return data.map(r=>({id:r.id,name:r.name,cat:r.cat,start:Number(r.start_time),end:r.end_time===null?null:Number(r.end_time)}))
+               .sort((a,b)=>a.start-b.start);
+  }catch(err){console.warn('云端读取失败，用本地：',err.message||err);return null;}
+}
+// 写云端：把本地当作准，整体对齐（新增/修改 upsert，本地已删的从云端删掉）
+async function cloudSync(){
+  if(!CLOUD_ON||!currentUser||!sb) return;
+  if(syncing){dirty=true;return;}          // 正在同步：标记，回头再来一次
+  syncing=true;dirty=false;
+  try{
+    const uid=currentUser.id;
+    const rows=entries.map(e=>({id:e.id,user_id:uid,name:e.name,cat:e.cat,start_time:e.start,end_time:e.end}));
+    if(rows.length){const {error}=await sb.from('entries').upsert(rows);if(error) throw error;}
+    const ids=entries.map(e=>e.id);
+    let del=sb.from('entries').delete().eq('user_id',uid);
+    if(ids.length) del=del.not('id','in','('+ids.join(',')+')');
+    const {error:e2}=await del; if(e2) throw e2;
+  }catch(err){console.warn('云同步失败，已保留在本地：',err.message||err);}
+  finally{syncing=false;if(dirty) cloudSync();}
+}
+
+// 登录表单
+let authMode='signin';
+function setAuthMode(m){
+  authMode=m;
+  $('authSubmit').textContent=m==='signin'?'登录':'注册';
+  $('authToggle').innerHTML=m==='signin'?'还没有账号？<a id="authToggleLink">注册</a>':'已有账号？<a id="authToggleLink">登录</a>';
+  $('authToggleLink').onclick=()=>setAuthMode(m==='signin'?'signup':'signin');
+  $('authErr').textContent='';
+}
+function mapAuthErr(m){
+  if(/Invalid login/i.test(m)) return '邮箱或密码不对';
+  if(/already registered/i.test(m)) return '这个邮箱已注册，直接登录就行';
+  if(/at least 6|Password should/i.test(m)) return '密码至少 6 位';
+  if(/valid email/i.test(m)) return '邮箱格式不对';
+  return m||'出错了，请重试';
+}
+async function doAuth(){
+  if(!sb){ if(!navigator.onLine||!(await loadSupabaseLib(4000))||!makeClient()){$('authErr').textContent='当前离线，登录需要联网';return;} }
+  const email=$('authEmail').value.trim(), pw=$('authPw').value, remember=$('authRemember').checked;
+  if(!email||!pw){$('authErr').textContent='请填写邮箱和密码';return;}
+  $('authSubmit').disabled=true;$('authSubmit').textContent='请稍候…';
+  // 先定“记住我”，决定会话存哪
+  if(remember) localStorage.setItem(REMEMBER_KEY,Date.now()+REMEMBER_DAYS*864e5);
+  else localStorage.removeItem(REMEMBER_KEY);
+  try{
+    const res=authMode==='signin'
+      ? await sb.auth.signInWithPassword({email,password:pw})
+      : await sb.auth.signUp({email,password:pw});
+    if(res.error) throw res.error;
+    if(!res.data.user){ // 开了邮箱验证的情况
+      $('authErr').textContent='注册成功，请查收邮箱确认后再登录';
+      $('authSubmit').disabled=false;setAuthMode('signin');return;
+    }
+    await enterApp(res.data.user);
+  }catch(err){
+    $('authErr').textContent=mapAuthErr(err.message||'');
+    $('authSubmit').disabled=false;$('authSubmit').textContent=authMode==='signin'?'登录':'注册';
   }
-},1000);
-render();
+}
+
+// 本地缓存当前属于哪个用户：防止多账号在同一浏览器互相串数据
+const OWNER_KEY='heshi_cloud_uid';
+// 进入应用：拉云端 → 决定用云端还是首次上传本地
+async function enterApp(user){
+  currentUser=user;
+  const cloud=await cloudPull();
+  const cacheOwner=localStorage.getItem(OWNER_KEY);
+  if(cloud===null){
+    // 离线：本地缓存若明确属于别的用户，清空以免串号（无归属的旧数据保留）
+    if(cacheOwner && cacheOwner!==user.id){entries=[];try{localStorage.setItem(KEY,'[]');}catch(e){}}
+    CLOUD_ON=false;                        // 纯本地，暂不同步以免误删云端
+  }else if(cloud.length===0 && entries.length>0 && !cacheOwner){
+    // 真·首次迁移：本地是“接入登录前”的旧数据（无归属标记）→ 上传到云端
+    CLOUD_ON=true; await cloudSync();
+    localStorage.setItem(OWNER_KEY,user.id);
+  }else{
+    entries=cloud;                         // 以云端为准（含“云端为空但非首次迁移”的情况）
+    entries.forEach(e=>{if(e.cat)ensureCat(e.cat);}); // 注册云端带来的自定义类别
+    try{localStorage.setItem(KEY,JSON.stringify(entries));}catch(e){}
+    localStorage.setItem(OWNER_KEY,user.id);
+    CLOUD_ON=true;
+  }
+  $('authScreen').style.display='none';
+  startRuntime();
+}
+
+let started=false;
+function startRuntime(){
+  if(started){render();return;}
+  started=true;
+  ensurePresets();migrateColors();ensureColors();
+  tick=setInterval(()=>{
+    if(running()){updateClock();if((bandBeat++%10)===0){renderBand();renderLedger();renderSummaries();}}
+  },1000);
+  render();
+}
+
+async function signOut(){
+  try{if(sb) await sb.auth.signOut();}catch(e){}
+  localStorage.removeItem(REMEMBER_KEY);
+  localStorage.removeItem(KEY);            // 清掉本地记录缓存，避免下一个账号看到
+  localStorage.removeItem(OWNER_KEY);
+  location.reload();
+}
+
+// 本地降级进入：直接用本地缓存，绝不卡白屏
+function bootLocal(){$('authScreen').style.display='none';CLOUD_ON=false;if(started)render();else startRuntime();}
+function showLogin(){$('authScreen').style.display='flex';$('authScreen').classList.add('ready');}
+function hasLocalData(){try{return JSON.parse(localStorage.getItem(KEY)||'[]').length>0;}catch(e){return false;}}
+
+// 启动：有库就走登录流程；没库（离线/被拦）就直接本地模式
+$('authSubmit').onclick=doAuth;
+$('authPw').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});
+$('signOutBtn').onclick=signOut;
+setAuthMode('signin');
+(async()=>{
+  // 在线才尝试加载云端库；离线直接跳过，不干等
+  if(!window.supabase && navigator.onLine){ await loadSupabaseLib(4000); }
+  makeClient();
+  if(!sb){                                  // 没库/离线：本地模式，绝不卡白屏
+    if(hasLocalData()||rememberValid()) bootLocal(); else showLogin();
+    return;
+  }
+  let session=null;
+  try{
+    // 读会话；断网时可能卡住或报错，加 3 秒超时兜底
+    session=await Promise.race([
+      sb.auth.getSession().then(r=>(r&&r.data&&r.data.session)||null).catch(()=>null),
+      new Promise(res=>setTimeout(()=>res('__timeout__'),3000))
+    ]);
+  }catch(e){ session=null; }
+  try{
+    if(session && session!=='__timeout__' && session.user){
+      await enterApp(session.user);        // 有会话：正常进（enterApp 内部已能应对拉云端失败）
+    }else if(rememberValid() && hasLocalData()){
+      bootLocal();                         // 断网/超时但“记住我”且有本地数据：直接进，看本地
+    }else{
+      showLogin();                         // 其余：显示登录框
+    }
+  }catch(e){
+    console.warn('启动异常，降级本地：',(e&&e.message)||e);
+    if(hasLocalData()) bootLocal(); else showLogin();  // 任何异常都不许卡白屏
+  }
+})();
 </script>
 </body>
 </html>
