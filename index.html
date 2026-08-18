@@ -1129,6 +1129,7 @@ function setAuthMode(m){
   $('authErr').textContent='';
 }
 function mapAuthErr(m){
+  if(/not confirmed/i.test(m)) return '请先到邮箱点确认链接，再登录';
   if(/Invalid login/i.test(m)) return '邮箱或密码不对';
   if(/already registered/i.test(m)) return '这个邮箱已注册，直接登录就行';
   if(/at least 6|Password should/i.test(m)) return '密码至少 6 位';
@@ -1148,9 +1149,9 @@ async function doAuth(){
       ? await sb.auth.signInWithPassword({email,password:pw})
       : await sb.auth.signUp({email,password:pw});
     if(res.error) throw res.error;
-    if(!res.data.user){ // 开了邮箱验证的情况
-      $('authErr').textContent='注册成功，请查收邮箱确认后再登录';
-      $('authSubmit').disabled=false;setAuthMode('signin');return;
+    if(!res.data.session){ // 没会话：开了邮箱验证，需先去邮箱确认
+      $('authErr').textContent='注册成功，请到邮箱点确认链接后再登录';
+      $('authSubmit').disabled=false;$('authSubmit').textContent='登录';setAuthMode('signin');return;
     }
     await enterApp(res.data.user);
   }catch(err){
